@@ -1,0 +1,471 @@
+
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App with AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 450px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .search-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .search-box input {
+            border: none;
+            outline: none;
+            background: #ebfffc;
+            color: #555;
+            padding: 15px 20px;
+            height: 50px;
+            border-radius: 25px;
+            flex: 1;
+            margin-right: 16px;
+            font-size: 16px;
+        }
+        
+        .search-box button {
+            border: none;
+            outline: none;
+            background: #ebfffc;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box button:hover {
+            background: #d5f5f2;
+            transform: scale(1.05);
+        }
+        
+        .search-box button img {
+            width: 18px;
+        }
+        
+        .weather-icon {
+            width: 150px;
+            margin-top: 10px;
+        }
+        
+        .weather h1 {
+            font-size: 60px;
+            font-weight: 500;
+            margin: 10px 0;
+        }
+        
+        .weather h2 {
+            font-size: 40px;
+            font-weight: 400;
+            margin-bottom: 15px;
+        }
+        
+        .details {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            margin-top: 40px;
+        }
+        
+        .col {
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
+        
+        .col img {
+            width: 40px;
+            margin-right: 10px;
+        }
+        
+        .humidity, .wind {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .error {
+            text-align: left;
+            margin-left: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ff6b6b;
+            display: none;
+        }
+        
+        .weather, .details {
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #555;
+        }
+        
+        .location {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        /* AI Assistant Styles */
+        .ai-assistant {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .ai-toggle {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .ai-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        .ai-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .ai-panel.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .ai-title {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .ai-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .ai-content {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #555;
+        }
+        
+        .ai-thinking {
+            display: none;
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        
+        .ai-thinking.active {
+            display: block;
+        }
+        
+        .ai-recommendation {
+            background: #f5f7ff;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border-left: 3px solid #6e8efb;
+        }
+        
+        .ai-icon {
+            font-size: 12px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="search-box">
+            <input type="text" placeholder="Enter city name" id="city-input">
+            <button id="search-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+            </button>
+        </div>
+        <p class="error" id="error-message">Invalid city name</p>
+        
+        <div class="loading" id="loading">Loading weather data...</div>
+        
+        <div class="weather" id="weather-data">
+            <img src="" class="weather-icon" id="weather-icon">
+            <div class="location" id="location"></div>
+            <h1 id="temperature"></h1>
+            <h2 id="condition"></h2>
+            
+            <div class="details">
+                <div class="col">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItaHVtaWRpdHkiPjxwb2x5bGluZSBwb2ludHM9IjEyIDMgMTIgMTUgMTUgMTUiPjwvcG9seWxpbmU+PHBhdGggZD0iTTE4IDhhNSA1IDAgMCAwLTUtNSA1IDUgMCAwIDAtNSA1YzAgNC4zIDMgNi43NSA1IDhhNSA1IDAgMCAwIDUtMSI+PC9wYXRoPjwvc3ZnPg==" alt="humidity">
+                    <div>
+                        <p class="humidity" id="humidity"></p>
+                        <p>Humidity</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJmZWF0aGVyIGZlYXRoZXItd2luZCI+PHBhdGggZD0iTTkuNTkgNC41OUEyIDIgMCAxIDEgMTEgOEgzIj48L3BhdGg+PHBhdGggZD0iTTEyIDJoN2ExIDEgMCAwIDEgMSAxdjRhMSAxIDAgMCAxLTEgMWgtMi41Ij48L3BhdGg+PHBhdGggZD0iTTkuNTkgNC41OUEyIDIgMCAxIDEgMTEgOEgzIj48L3BhdGg+PHBhdGggZD0iTTEyIDJoN2ExIDEgMCAwIDEgMSAxdjRhMSAxIDAgMCAxLTEgMWgtMi41Ij48L3BhdGg+PHBhdGggZD0iTTMuODcgMTYuMThBMiAyIDAgMSAxIDUgMTdIMiI+PC9wYXRoPjxwYXRoIGQ9Ik0zIDIxaDdhMSAxIDAgMCAwIDEtMXYtNGExIDEgMCAwIDAtMS0xSDkuNSI+PC9wYXRoPjwvc3ZnPg==" alt="wind">
+                    <div>
+                        <p class="wind" id="wind"></p>
+                        <p>Wind Speed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="ai-assistant">
+        <div class="ai-toggle" id="ai-toggle">AI</div>
+        <div class="ai-panel" id="ai-panel">
+            <div class="ai-header">
+                <div class="ai-title">Weather Assistant</div>
+                <button class="ai-close" id="ai-close">×</button>
+            </div>
+            <div class="ai-content" id="ai-content">
+                <p>Hi there! I'm your weather assistant. Search for a location to get weather insights and recommendations.</p>
+            </div>
+            <div class="ai-thinking" id="ai-thinking">Thinking...</div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = 'c33428f78c694fee917163324251909';
+        const apiUrl = 'http://api.weatherapi.com/v1/current.json';
+        
+        const searchBox = document.querySelector('.search-box input');
+        const searchBtn = document.querySelector('.search-box button');
+        const weatherIcon = document.querySelector('.weather-icon');
+        const errorMessage = document.querySelector('.error');
+        const weatherData = document.querySelector('.weather');
+        const loading = document.querySelector('.loading');
+        
+        // AI Elements
+        const aiToggle = document.getElementById('ai-toggle');
+        const aiPanel = document.getElementById('ai-panel');
+        const aiContent = document.getElementById('ai-content');
+        const aiThinking = document.getElementById('ai-thinking');
+        const aiClose = document.getElementById('ai-close');
+        
+        // Function to fetch weather data
+        async function checkWeather(city) {
+            // Show loading, hide previous data and errors
+            loading.style.display = 'block';
+            weatherData.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${apiUrl}?key=${apiKey}&q=${city}&aqi=yes`);
+                
+                if (!response.ok) {
+                    throw new Error('City not found');
+                }
+                
+                const data = await response.json();
+                
+                // Update DOM with weather data
+                document.querySelector('#temperature').innerHTML = Math.round(data.current.temp_c) + '°C';
+                document.querySelector('#condition').innerHTML = data.current.condition.text;
+                document.querySelector('#location').innerHTML = `${data.location.name}, ${data.location.country}`;
+                document.querySelector('#humidity').innerHTML = data.current.humidity + '%';
+                document.querySelector('#wind').innerHTML = data.current.wind_kph + ' km/h';
+                
+                // Set weather icon (using WeatherAPI's icon)
+                weatherIcon.src = data.current.condition.icon;
+                
+                // Hide loading and show weather data
+                loading.style.display = 'none';
+                weatherData.style.display = 'block';
+                
+                // Generate AI insights
+                generateAIInsights(data);
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = error.message;
+            }
+        }
+        
+        // Function to generate AI insights based on weather data
+        function generateAIInsights(weatherData) {
+            // Show thinking indicator
+            aiThinking.classList.add('active');
+            
+            // Simulate AI thinking (in a real app, this would call an AI API)
+            setTimeout(() => {
+                const temp = weatherData.current.temp_c;
+                const condition = weatherData.current.condition.text.toLowerCase();
+                const humidity = weatherData.current.humidity;
+                const wind = weatherData.current.wind_kph;
+                const location = weatherData.location.name;
+                
+                let insights = '';
+                let recommendations = '';
+                
+                // Generate insights based on temperature
+                if (temp < 0) {
+                    insights += `It's extremely cold in ${location} right now. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">❄️</span> Dress in warm layers, including a heavy coat.</div>`;
+                } else if (temp < 10) {
+                    insights += `It's quite chilly in ${location}. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">🧥</span> A jacket or sweater would be appropriate.</div>`;
+                } else if (temp < 20) {
+                    insights += `The temperature is mild in ${location}. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">👕</span> Light layers would be comfortable.</div>`;
+                } else if (temp < 30) {
+                    insights += `It's pleasantly warm in ${location}. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">😎</span> Perfect weather for outdoor activities.</div>`;
+                } else {
+                    insights += `It's quite hot in ${location}. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">🧴</span> Stay hydrated and wear sunscreen.</div>`;
+                }
+                
+                // Generate insights based on weather condition
+                if (condition.includes('rain') || condition.includes('drizzle')) {
+                    insights += `There's currently rain in the area. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">☔</span> Don't forget your umbrella if going out.</div>`;
+                } else if (condition.includes('snow') || condition.includes('sleet')) {
+                    insights += `There's snow in the forecast. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">🧤</span> Wear warm boots and be cautious on roads.</div>`;
+                } else if (condition.includes('sunny') || condition.includes('clear')) {
+                    insights += `The skies are clear. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">🕶️</span> Great day for outdoor activities!</div>`;
+                } else if (condition.includes('cloud')) {
+                    insights += `It's cloudy today. `;
+                }
+                
+                // Generate insights based on wind
+                if (wind > 20) {
+                    insights += `It's quite windy with gusts up to ${wind} km/h. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">💨</span> Secure loose objects outdoors.</div>`;
+                }
+                
+                // Generate insights based on humidity
+                if (humidity > 80) {
+                    insights += `The humidity is very high. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">💧</span> It might feel warmer than the actual temperature.</div>`;
+                } else if (humidity < 30) {
+                    insights += `The air is quite dry. `;
+                    recommendations += `<div class="ai-recommendation"><span class="ai-icon">💦</span> Remember to stay hydrated.</div>`;
+                }
+                
+                // Update AI panel content
+                aiContent.innerHTML = `
+                    <p>${insights}</p>
+                    <p><strong>Recommendations:</strong></p>
+                    ${recommendations}
+                `;
+                
+                // Hide thinking indicator
+                aiThinking.classList.remove('active');
+                
+                // Show AI panel if not already visible
+                aiPanel.classList.add('active');
+                
+            }, 1500); // Simulate AI processing time
+        }
+        
+        // Event listener for search button
+        searchBtn.addEventListener('click', () => {
+            if (searchBox.value.trim() !== '') {
+                checkWeather(searchBox.value);
+            }
+        });
+        
+        // Event listener for Enter key in input field
+        searchBox.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && searchBox.value.trim() !== '') {
+                checkWeather(searchBox.value);
+            }
+        });
+        
+        // Toggle AI panel
+        aiToggle.addEventListener('click', () => {
+            aiPanel.classList.toggle('active');
+        });
+        
+        // Close AI panel
+        aiClose.addEventListener('click', () => {
+            aiPanel.classList.remove('active');
+        });
+        
+        // Load weather for a default city on initial load
+        window.addEventListener('load', () => {
+            checkWeather('London');
+        });
+    </script>
+</body>
+</html>
+
+
+
+
